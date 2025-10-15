@@ -37,11 +37,11 @@ BAITS comprises three core modules:
 - ** SR module **: reveal patterns of clonal migration, expansion, and niche restriction by integrating spatial transcriptomic and BCR data
 
 ## Installation
-1. Create a conda or pyenv environment and install Python >= 3.10,<3.13 
+**1. Create a conda environment and then install Python >= 3.10,<3.13**
 ```bash
 conda create --name BAITS python=3.10
 ```
-2. Pip install BAITS
+**2. Pip install BAITS**
 ```bash
 conda activate BAITS
 pip install BAITS
