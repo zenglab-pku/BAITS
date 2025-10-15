@@ -1,6 +1,6 @@
 
 <div align="center">
-<img src="https://github.com/zenglab-pku/BAITS/docs/_static/BAITS_logo.png" width="400px">
+<img src="https://github.com/zenglab-pku/BAITS/raw/master/docs/_static/BAITS_logo.png" width="400px">
 
 **A Python package for <span style="color:#660974">B</span> cell repertoire <span style="color:#660974">a</span>nalysis and l<span style="color:#660974">i</span>neage <span style="color:#660974">t</span>racking in <span style="color:#660974">s</span>patial omics.**
 
@@ -23,7 +23,7 @@ To systematically investigate the spatial organization and clonal dynamics of B 
 </p>
 
 <p align="center">
-  <img src="https://github.com/zenglab-pku/BAITS/docs/_static/BAITS_framework.png" width="500px">
+  <img src="https://github.com/zenglab-pku/BAITS/raw/master/docs/_static/BAITS_framework.png" width="500px">
 </p>
 
 
