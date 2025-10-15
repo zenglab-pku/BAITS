@@ -1,0 +1,96 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build]
+ exclude = [
+   "docs/*",
+   "tests/*",
+ ]
+
+[project]
+name = "BAITS"
+version = "0.1"
+description = "B cell repertoire analysis and lineage tracking in spatial omics"
+readme = "README.md"
+requires-python = ">=3.8,<3.12" 
+license = {file = "LICENSE"}
+authors = [
+    {name = "Zeng lab"},
+]
+maintainers = [
+    {name = "zenglab-pku", email = "zhao-yp22@mails.tsinghua.edu.cn"},
+]
+
+dependencies = [
+    "anndata < 0.11.0",
+    "scikit-learn",
+    "squidpy",
+    "torchgmm",
+    "tqdm",
+    "pytorch-lightning>=1.6.0",
+    "matplotlib < 3.9.0",
+    "spatialdata",
+    "spatialdata-plot >= 0.1.0", 
+    "pandas<2.0",
+    "numpy<2.0",
+    "pyarrow<10.0",
+    "Levenshtein"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit",       # 帮助开发者避免将不符合代码风格或质量要求的代码提交到代码仓库
+    "twine"
+]
+doc = [
+    "docutils>=0.8,!=0.18.*,!=0.19.*",
+    "sphinx>=4.0.0",
+    "sphinx-book-theme>=1.0.0",
+    "myst-nb>=1.1.0",
+    "sphinxcontrib-bibtex>=1.0.0",
+    "sphinx-autodoc-typehints>=1.0.0",
+    "ipykernel>=6.0.0",
+    "ipython>=7.0.0",
+    "sphinx-copybutton>=0.3.0",
+    "sphinx-design",
+]
+
+test = [
+    "pytest",
+    "pytest-cov",
+]
+transcriptomics = [
+    "scvi-tools",
+]
+proteomics = [
+    "scarches",
+]
+
+[tool.coverage.run]
+source = ["BAITS"]
+omit = [
+    "**/test_*.py",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+xfail_strict = true
+addopts = [
+    "--import-mode=importlib",  # allow using test files with same name
+]
+filterwarnings = [
+    "ignore::anndata.OldFormatWarning",
+    "ignore:.*this fit will run with no optimizer.*",
+    "ignore:.*Consider increasing the value of the `num_workers` argument.*",
+]
+
+[tool.isort]
+include_trailing_comma = true
+multi_line_output = 3
+profile = "black"
+skip_glob = ["docs/*"]
+
+
+
+
