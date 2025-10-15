@@ -11,6 +11,7 @@
   <a href="https://github.com/zenglab-pku/BAITS/tree/main#" target="_blank">Github</a>
 </p>
 
+</div>
 
 ## Background
 
