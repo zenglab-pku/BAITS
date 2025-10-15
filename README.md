@@ -24,7 +24,7 @@ To systematically investigate the spatial organization and clonal dynamics of B 
 </p>
 
 <p align="center">
-  <img src="https://github.com/zenglab-pku/BAITS/raw/master/docs/_static/BAITS_framework.png" width="700px">
+  <img src="https://github.com/zenglab-pku/BAITS/raw/master/docs/_static/BAITS_framework.png" width="800px">
 </p>
 
 
