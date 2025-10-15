@@ -32,9 +32,12 @@ To systematically investigate the spatial organization and clonal dynamics of B 
 <p>
 BAITS comprises three core modules:
 </p>
-- ** Spatial Transcriptomics (ST) module **: identify B lymphocyte aggregates based solely on spatial transcriptomic data
-- ** Immune Repertoire (IR) module **: quantify clonal expansion, clonal degree centrality, and other repertoire features using spatial BCR sequencing data
-- ** SR module **: reveal patterns of clonal migration, expansion, and niche restriction by integrating spatial transcriptomic and BCR data
+
+- **Spatial Transcriptomics (ST) module**: identify B lymphocyte aggregates based solely on spatial transcriptomic data
+
+- **Immune Repertoire (IR) module**: quantify clonal expansion, clonal degree centrality, and other repertoire features using spatial BCR sequencing data
+
+- **SR module**: reveal patterns of clonal migration, expansion, and niche restriction by integrating spatial transcriptomic and BCR data
 
 ## Installation
 **1. Create a conda environment and then install Python >= 3.10,<3.13**
