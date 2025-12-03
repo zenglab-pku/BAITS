@@ -18,7 +18,6 @@ VDJ.md
 
 notebooks/st_tutorial
 notebooks/VDJ_tutorial
-notebooks/R_BCRsharing_LA
 notebooks/st_VDJ_tutorial
 
 ```
