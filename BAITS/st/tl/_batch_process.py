@@ -44,8 +44,8 @@ def batch_process(
     
     # Filter data if score_name is provided
     # Generally, users wont't be interested in the region with score_name < 0
-    if score_name is not None:
-        adata = adata[adata.obs[score_name] > 0].copy()
+    # if score_name is not None:
+    #     adata = adata[adata.obs[score_name] > 0].copy()
     
     # Get unique samples
     samples = set(adata.obs[sample_name])
@@ -61,26 +61,16 @@ def batch_process(
         # Apply processing function if provided
         if processing_func is not None:
             adata_sample = processing_func(adata_sample, **func_kwargs)
-            if processing_func.__name__ == "kde_filter":  # 通过函数名判断
-                try:
-                    from BAITS.st.pl import kde_filter  # 动态导入
-                    kde_filter(adata_sample, score_name, figsize=(12, 3), spot_size=50)
-                except ImportError:
-                    print("👀 [Warning] BAITS.st.pl.kde_filter not available - skipping plotting")
-
-            if processing_func.__name__ == "dbscan_cluster":  # 通过函数名判断
-                try:
-                    from BAITS.st.pl import dbscan_cluster  # 动态导入
-                    dbscan_cluster(adata_sample, score_name, figsize=(12, 3), spot_size=50)
-                except ImportError:
-                    print("👀 [Warning] BAITS.st.pl.dbscan_cluster not available - skipping plotting")
 
         processed_samples.append(adata_sample)
         
         if verbose:
             print(f'✅ Sample: {sample} done!')
-    
+            print('\n\n') 
+        
+        # print(adata_sample)
     # Combine all processed samples
-    return ad.concat(processed_samples)
+    # print(processed_samples)
+    return ad.concat(processed_samples, axis=0)
 
 

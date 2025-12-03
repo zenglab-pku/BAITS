@@ -35,7 +35,8 @@ dependencies = [
     "pandas<2.0",
     "numpy<2.0",
     "pyarrow<10.0",
-    "Levenshtein"
+    "Levenshtein",
+    "harmonypy"
 ]
 
 [project.optional-dependencies]

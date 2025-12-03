@@ -4,6 +4,16 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import seaborn as sns
 
+def _plot_cdr3_length_freq(df, chain_col,  cdr3_length='cdr3_length', figsize=(12,4)): 
+    fig, axes = plt.subplots(1,3,figsize=figsize)
+    for i,chain in enumerate(list(set(df[chain_col]))): 
+        sns.histplot(df.loc[df[chain_col]==chain, 'cdr3_length'], bins=20, kde=False, linewidth=0.5, ax=axes[i])  
+        axes[i].set_title(chain + ' CDR3 length') 
+        axes[i].set_xlabel('Length of CDR3s') 
+        axes[i].set_ylabel('Frequency') 
+    plt.tight_layout() 
+
+
 def _plot_bar(df, x, y, groupby=None, palette='Set2', xlabel=None, ylabel='Clone Richeness', ylog=False, ax=None, figsize=(4,3.5) ):
     plt.figure(figsize=figsize)
     sns.barplot(y=y, x=x, data=df, hue=groupby, palette='Set2', alpha=0.5) 
@@ -26,8 +36,8 @@ def _boxplot(df, x, y, groupby=None, palette='Set2', xlabel=None, ylabel=None, l
     if log:
         plt.yscale('log')
 
-    if groupby is not None:
-        plt.legend(loc='upper right', bbox_to_anchor=(1, 1))
+    # if groupby is not None:
+    #     plt.legend(loc='upper right', bbox_to_anchor=(1, 1))
     
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
