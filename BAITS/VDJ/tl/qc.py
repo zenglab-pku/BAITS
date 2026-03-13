@@ -4,6 +4,31 @@ import seaborn as sns
 from pl.basic_plot import _qc_boxplot_clone, _qc_boxplot_umis, _plot_cdr3_length_freq
 
 def calculate_cdr3_length(df, sample_col, Cgene_col, cdr3_col, cdr3_type='nt', plot=True, figsize=(9,3)):
+    """
+    Calculate the CDR3 length for each clone and optionally plot the distribution.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input dataframe containing clone and CDR3 information.
+    sample_col : str
+        Column name for sample or library.
+    Cgene_col : str
+        Column name for the chain (Cgene).
+    cdr3_col : str
+        Column containing CDR3 sequences.
+    cdr3_type : str, default='nt'
+        Type of CDR3 sequence ('nt' for nucleotide, 'aa' for amino acid).
+    plot : bool, default=True
+        Whether to plot CDR3 length distribution.
+    figsize : tuple, default=(9,3)
+        Figure size for the plot.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Original dataframe with an additional 'cdr3_length' column.
+    """
     clone_length_df = df[[sample_col, Cgene_col, cdr3_col]].drop_duplicates().assign(cdr3_length=lambda df: df[cdr3_col].str.len())[[sample_col, Cgene_col, cdr3_col, 'cdr3_length']]
 
     if cdr3_type=='nt':
@@ -21,6 +46,33 @@ def calculate_cdr3_length(df, sample_col, Cgene_col, cdr3_col, cdr3_type='nt', p
 
 
 def calculate_qc_clones(df, group_by, Cgene_col, clone_col, loc_x_col='X', loc_y_col='Y', plot=True): 
+    """
+    Compute per-group clone counts and per-spatial-location clone counts.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input dataframe containing clone, chain, and spatial information.
+    group_by : str
+        Column name to group by (e.g., sample or tissue region).
+    Cgene_col : str
+        Column name for chain (Cgene).
+    clone_col : str
+        Column containing clone identifiers.
+    loc_x_col : str, default='X'
+        Column name for x-coordinate.
+    loc_y_col : str, default='Y'
+        Column name for y-coordinate.
+    plot : bool, default=True
+        Whether to generate QC boxplots.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Original dataframe with additional columns:
+        - 'clone_by_group': number of clones per group
+        - 'clone_by_group_spatialLoc': number of clones per spatial location
+    """
     clone_df = df[[group_by, Cgene_col, clone_col ]].drop_duplicates().groupby([group_by, Cgene_col ]).size().reset_index(name='clone_by_group')  
     clone_spatial_df = df[[group_by, Cgene_col, clone_col, loc_x_col, loc_y_col]].drop_duplicates().groupby([group_by, Cgene_col, loc_x_col, loc_y_col]).size().reset_index(name='clone_by_group_spatialLoc') 
     
@@ -34,6 +86,35 @@ def calculate_qc_clones(df, group_by, Cgene_col, clone_col, loc_x_col='X', loc_y
 
 
 def calculate_qc_umis(df, group_by, Cgene_col, clone_col, loc_x_col='X', loc_y_col='Y', plot=True, figsize=(7, 3.5)): 
+    """
+    Compute per-group and per-spatial-location UMI counts for clones.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input dataframe containing clone, chain, and spatial information.
+    group_by : str
+        Column name to group by (e.g., sample or tissue region).
+    Cgene_col : str
+        Column name for chain (Cgene).
+    clone_col : str
+        Column containing clone identifiers.
+    loc_x_col : str, default='X'
+        Column name for x-coordinate.
+    loc_y_col : str, default='Y'
+        Column name for y-coordinate.
+    plot : bool, default=True
+        Whether to generate QC boxplots.
+    figsize : tuple, default=(7,3.5)
+        Figure size for plots.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Original dataframe with additional columns:
+        - 'umis_by_group': total UMIs per group
+        - 'umis_by_group_spatialLoc': total UMIs per spatial location
+    """
     umis_df = df[[group_by, Cgene_col, clone_col ]].groupby([group_by, Cgene_col ]).size().reset_index(name='umis_by_group')  
     umis_spatial_df = df[[group_by, Cgene_col, clone_col, loc_x_col, loc_y_col]].groupby([group_by, Cgene_col, loc_x_col, loc_y_col]).size().reset_index(name='umis_by_group_spatialLoc') 
 
@@ -47,15 +128,83 @@ def calculate_qc_umis(df, group_by, Cgene_col, clone_col, loc_x_col='X', loc_y_c
 
 
 def filter_clones(df, clone_col, min_clone=1): 
+    """
+    Filter dataframe by minimum clone count.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input dataframe.
+    clone_col : str
+        Column name containing clone counts.
+    min_clone : int, default=1
+        Minimum clone count to retain.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Filtered dataframe.
+    """
     return df[df[clone_col] > min_clone]
 
 def filter_clones_spatial(df, clone_spatial_col, min_clone_spatial=1): 
+    """
+    Filter dataframe by minimum spatial clone count.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input dataframe.
+    clone_spatial_col : str
+        Column containing spatial clone counts.
+    min_clone_spatial : int, default=1
+        Minimum count to retain.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Filtered dataframe.
+    """
     return df[df[clone_spatial_col] > min_clone_spatial]
 
 def filter_umi(df, umi_key, min_umi=1): 
+    """
+    Filter dataframe by minimum UMI count per clone.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input dataframe.
+    umi_key : str
+        Column containing UMI counts.
+    min_umi : int, default=1
+        Minimum UMI to retain.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Filtered dataframe.
+    """
     return df[df[umi_key] > min_umi]
 
 def filter_umi_spatial(df, clone_umi_key, min_umi_spatial=1): 
+    """
+    Filter dataframe by minimum spatial UMI count per clone.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input dataframe.
+    clone_umi_key : str
+        Column containing spatial UMI counts.
+    min_umi_spatial : int, default=1
+        Minimum spatial UMI to retain.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Filtered dataframe.
+    """
     return df[df[clone_umi_key] > min_umi_spatial]
 
 

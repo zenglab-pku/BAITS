@@ -21,6 +21,91 @@ def spatial_neighbors(
     percentile = None, set_diag = False, key_added = "spatial",
     copy = False
 ): 
+    """
+    Compute spatial neighbor graph for an AnnData object.
+
+    This function constructs a spatial neighborhood graph based on spatial
+    coordinates stored in ``adata.obsm[spatial_key]``. The resulting adjacency
+    and distance matrices are stored in ``adata.obsp`` and metadata describing
+    the graph is stored in ``adata.uns``.
+
+    The neighborhood graph can be computed using k-nearest neighbors,
+    a fixed radius, or Delaunay triangulation depending on the parameters.
+
+    Parameters
+    ----------
+    adata : anndata.AnnData
+        Annotated data matrix containing spatial coordinates.
+
+    sample_key : str or None
+        Column in ``adata.obs`` specifying sample or library identifiers.
+        If provided, spatial neighbor graphs will be computed independently
+        for each sample and then combined into a block-diagonal matrix.
+
+    coord_type : {"grid", "generic"} or None
+        Type of spatial coordinate system.
+
+        - ``"grid"``: coordinates follow a lattice/grid structure.
+        - ``"generic"``: arbitrary spatial coordinates.
+
+        If ``None``, the coordinate type is inferred automatically.
+
+    n_neighs : int, default=10
+        Number of nearest neighbors used to construct the spatial graph.
+
+    radius : float or None, optional
+        Radius for defining spatial neighbors. Only applicable when
+        ``coord_type="generic"``.
+
+    delaunay : bool, default=True
+        Whether to construct neighbors using Delaunay triangulation.
+
+    spatial_key : str, default="spatial"
+        Key in ``adata.obsm`` where spatial coordinates are stored.
+
+    n_rings : int, default=1
+        Number of neighbor rings used when ``coord_type="grid"``.
+
+    percentile : float or None, optional
+        Percentile threshold used for distance filtering.
+
+    set_diag : bool, default=False
+        Whether to set diagonal elements of the connectivity matrix.
+
+    key_added : str, default="spatial"
+        Prefix used for storing results in ``adata.obsp`` and ``adata.uns``.
+
+    copy : bool, default=False
+        If ``True``, return adjacency and distance matrices instead of
+        storing them in ``adata``.
+
+    Returns
+    -------
+    tuple of scipy.sparse.spmatrix, optional
+        If ``copy=True``, returns:
+
+        - adjacency matrix
+        - distance matrix
+
+    Otherwise, results are stored in:
+
+    - ``adata.obsp[f"{key_added}_connectivities"]``
+    - ``adata.obsp[f"{key_added}_distances"]``
+    - ``adata.uns[f"{key_added}_neighbors"]``
+
+    Notes
+    -----
+    The neighbor graph is computed separately for each sample when
+    ``sample_key`` is provided. The resulting matrices are merged using
+    block-diagonal concatenation to avoid cross-sample connections.
+
+    Examples
+    --------
+    >>> spatial_neighbors(adata, sample_key="sample", coord_type="generic")
+    >>> adata.obsp["spatial_connectivities"]
+    >>> adata.obsp["spatial_distances"]
+    """
+
     if coord_type is None:
         if radius is not None:
             logg.warning(

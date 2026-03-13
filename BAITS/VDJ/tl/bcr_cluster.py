@@ -1,69 +1,139 @@
-import numpy as np
+import multiprocessing
+from functools import partial
+import networkx as nx
 import pandas as pd
-from scipy.cluster.hierarchy import linkage, fcluster
-from scipy.spatial.distance import squareform
-from Levenshtein import distance as levenshtein_distance
-from itertools import combinations
-from collections import defaultdict
+from tqdm.contrib.concurrent import process_map
 
-def _cluster_cdr3nt(cdr3_sequences, threshold=0.85):
-    # Calculate pairwise distances
-    n = len(cdr3_sequences)
-    dist_matrix = np.zeros((n, n))
-    
-    for i, j in combinations(range(n), 2):
-        dist_matrix[i, j] = levenshtein_distance(cdr3_sequences[i], cdr3_sequences[j])
-        dist_matrix[j, i] = dist_matrix[i, j]
-    
-    condensed_dist = squareform(dist_matrix)
-    Z = linkage(condensed_dist, method='average')
-    max_dist = max(len(seq) for seq in cdr3_sequences) * (1 - threshold)
-    clusters = fcluster(Z, max_dist, criterion='distance')
-    
-    return {seq: cluster for seq, cluster in zip(cdr3_sequences, clusters)}
+def cluster_group(cdr3_list, threshold=0.85):
+    """
+    Cluster a list of CDR3 nucleotide sequences based on sequence identity.
 
+    Two sequences are clustered together if their pairwise identity
+    is greater than or equal to the specified threshold.
 
-def _build_bcr_family(bcr_data, cdr3nt_col, threshold=0.85):
-    
-    tmp_dd_ss = bcr_data.drop_duplicates(subset=[cdr3nt_col])
-    
-    if tmp_dd_ss.empty:
-        return None
-    
-    comp_cdr3_nt = tmp_dd_ss[cdr3nt_col].tolist()
+    Parameters
+    ----------
+    cdr3_list : list of str
+        List of unique CDR3 nucleotide sequences.
+    threshold : float, default=0.85
+        Minimum pairwise identity required to connect two sequences.
 
-    if len(comp_cdr3_nt)==1:
-        return  {comp_cdr3_nt[0]: 0 }
+    Returns
+    -------
+    list of sets
+        Each set contains sequences belonging to the same cluster.
+    """
+    cdr3_list = list(set(cdr3_list))
+    L = len(cdr3_list[0])
     
-    family_groups = _cluster_cdr3nt(comp_cdr3_nt, threshold)
-    return family_groups
-    
+    G = nx.Graph()
+    G.add_nodes_from(cdr3_list)
 
-def build_bcr_family(bcr_data, Vgene_col, Jgene_col, cdr3nt_col, Cgene_key, Cgene='IGH', threshold=0.85):
+    for i, s1 in enumerate(cdr3_list):
+        for s2 in cdr3_list[i+1:]:
+            mismatches = sum(c1 != c2 for c1, c2 in zip(s1,s2))
+            identity = 1 - mismatches/L
+            if identity >= threshold:
+                G.add_edge(s1,s2)
+    return list(nx.connected_components(G))
+    
+def process_group_with_neighbor_count(group, threshold=0.85, cdr3nt_col='cdr3nt'):
+    """
+    Process a grouped BCR dataframe to assign clusters and neighbor counts.
 
-    data = bcr_data[[Vgene_col, Jgene_col, cdr3nt_col, Cgene_key]].copy()
-    
-    # Filter by c_gene
-    data = data[data['Cgene'].str.contains(Cgene)].copy()
-    
-    data = data.drop_duplicates(subset=[Vgene_col, Jgene_col, cdr3nt_col])
-    data['CDR3_length'] = (data[cdr3nt_col].str.len()/3).astype(int)
-    data['cloneGroup'] = data[Vgene_col] + "_" + data[Jgene_col] + "_" + data[cdr3nt_col].astype(str) 
-    data['family'] = ''
-    for group in set(data['cloneGroup']): 
-        tmp_data = data[data['cloneGroup'] == group].copy()
-        result = _build_bcr_family(tmp_data, cdr3nt_col, threshold=0.85)
+    For each group of sequences sharing the same Vgene, Jgene, and CDR3 length,
+    sequences are clustered and the number of neighbors with a single nucleotide
+    difference is counted for each sequence.
 
-        if not result:
-            continue
+    Parameters
+    ----------
+    group : tuple
+        Tuple of ((Vgene, Jgene, CDR3_nt_length), dataframe) for the group.
+    threshold : float, default=0.85
+        Minimum identity threshold used for clustering.
+    cdr3nt_col : str, default="cdr3nt"
+        Column containing CDR3 nucleotide sequences.
 
-        for seq, family_num_idx in result.items():
-            family_name = group + '_family_' + str(family_num_idx) 
-            mask = (data['cloneGroup'] == group) & (data[cdr3nt_col]==(seq) )  
-            data.loc[mask, 'family'] = family_name
-            
-    data['family_id'] = [ Cgene + '_family_' +x for x in pd.Categorical(data['family']).codes.astype(str)]
-    bcr_data = pd.merge(bcr_data, data, on = [Vgene_col, Jgene_col, Cgene_key, cdr3nt_col], how='left')
+    Returns
+    -------
+    list of tuples
+        Each tuple contains:
+        (Vgene, Jgene, sequence, cluster_id, neighbor_count)
+    """
+    (v_fam, j_fam, cdr3_len), df_group = group
+    if len(df_group) < 2:
+        # 单序列的 cluster，neighbor count = 0
+        return [(v_fam, j_fam, seq, f"{v_fam}_{j_fam}_{cdr3_len}_0", 0) for seq in df_group[cdr3nt_col]]
+        
+    cdr3_list = df_group[cdr3nt_col].unique().tolist()
+    clusters = cluster_group(cdr3_list, threshold=threshold)
     
-    return bcr_data
+    result = []
+    for cid, cluster in enumerate(clusters):
+        cluster_id = f"{v_fam}_{j_fam}_{cdr3_len}_{cid}"
+        cluster_list = list(cluster)
+        
+        for seq in cluster_list:
+            neighbor_count = sum(
+                sum(c1 != c2 for c1, c2 in zip(seq, other)) == 1
+                for other in cluster_list if other != seq
+            )
+            result.append((v_fam, j_fam, seq, cluster_id, neighbor_count))
     
+    return result
+
+def cluster_bcrs(igh_df, threshold=0.85, sample_col=None, Vgene_col='Vgene', Jgene_col='Jgene', cdr3nt_col='cdr3nt', n_cpu=None):
+    """
+    Cluster BCR sequences across an entire dataset and compute neighbor degrees.
+
+    This function groups sequences by Vgene, Jgene, and CDR3 length, applies
+    `process_group_with_neighbor_count` in parallel, and returns the original
+    dataframe with added columns for BCR family ID and neighbor degree.
+
+    Parameters
+    ----------
+    igh_df : pandas.DataFrame
+        DataFrame containing BCR sequences.
+    threshold : float, default=0.85
+        Sequence identity threshold for clustering.
+    sample_col : str or None, optional
+        Column for sample/library ID. Currently reserved for future use.
+    Vgene_col : str, default="Vgene"
+        Column containing V gene names.
+    Jgene_col : str, default="Jgene"
+        Column containing J gene names.
+    cdr3nt_col : str, default="cdr3nt"
+        Column containing CDR3 nucleotide sequences.
+    n_cpu : int or None, optional
+        Number of CPUs to use for parallel processing. Defaults to all available.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Original dataframe augmented with:
+        - "BCR_familyID": cluster ID assigned to each sequence
+        - "Degree": number of neighbors differing by one nucleotide within cluster
+    """
+    igh_df['CDR3_nt_length'] = igh_df[cdr3nt_col].str.len()
+    grouped = igh_df.groupby([Vgene_col, Jgene_col, 'CDR3_nt_length'])
+    
+    if n_cpu is None:
+        n_cpu = multiprocessing.cpu_count()
+    
+    process_func = partial(process_group_with_neighbor_count, threshold=threshold, cdr3nt_col=cdr3nt_col)
+    results = process_map(process_func, list(grouped), max_workers=n_cpu, chunksize=1, desc="Clustering groups")
+    
+    cluster_map = {}
+    neighbor_map = {}
+    for r in results:
+        for v_fam, j_fam, seq, cid, neighbor_count in r:
+            cluster_map[(v_fam, j_fam, seq)] = cid
+            neighbor_map[(v_fam, j_fam, seq)] = neighbor_count
+    
+    cluster_df = pd.DataFrame(
+        [(v, j, seq, cluster_map[(v,j,seq)], neighbor_map[(v,j,seq)])
+         for (v,j,seq) in cluster_map],
+        columns=[Vgene_col, Jgene_col, cdr3nt_col, 'BCR_familyID', 'Degree'] 
+    )
+    
+    return pd.merge(igh_df, cluster_df, how='left', on=[Vgene_col, Jgene_col, cdr3nt_col])

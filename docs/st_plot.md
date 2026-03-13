@@ -8,6 +8,6 @@
     :toctree: generated
 
     pl.clustering_results
-    pl.kde_filter
+    pl.kde_res
     pl.silhouette_scores
 ```
