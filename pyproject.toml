@@ -10,7 +10,7 @@ requires = ["hatchling"]
 
 [project]
 name = "BAITS"
-version = "0.1"
+version = "0.1.1"
 description = "B cell repertoire analysis and lineage tracking in spatial omics"
 readme = "README.md"
 requires-python = ">=3.8,<3.12" 

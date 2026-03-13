@@ -17,6 +17,7 @@ VDJ.md
 :caption: Tutorials
 
 notebooks/st_tutorial
+notebooks/st_spatial_cluster
 notebooks/VDJ_tutorial
 notebooks/st_VDJ_tutorial
 

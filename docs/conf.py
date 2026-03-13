@@ -14,6 +14,7 @@ version = '0.1.0'
 import sys
 import os
 sys.path.insert(0, os.path.abspath('../BAITS'))
+sys.path.insert(0, os.path.abspath('../'))
 
 # Test if the module can be imported
 # try:
